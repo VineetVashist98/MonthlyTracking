@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket Log Calendar</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    input, button {
+      padding: 8px;
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+    .day {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 100px;
+    }
+    .entry {
+      background-color: #f0f8ff;
+      border: 1px solid #00f;
+      margin-top: 5px;
+      padding: 4px;
+      font-size: 0.85em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ticket Log Tracker</h1>
+  <form id="logForm">
+    <input type="text" id="ticketId" placeholder="Ticket ID" required>
+    <input type="date" id="logDate" required>
+    <input type="number" id="hours" placeholder="Hours" min="1" required>
+    <button type="submit">Log Ticket</button>
+    <button type="button" onclick="downloadExcel()">Download Excel</button>
+    <input type="file" id="uploadFile" accept=".xlsx">
+  </form>
+
+  <div class="calendar" id="calendar"></div>
+
+  <h2>Summary Table</h2>
+  <table id="summaryTable">
+    <thead>
+      <tr>
+        <th>Ticket ID</th>
+        <th>Total Hours</th>
+        <th>Dates Worked</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    const form = document.getElementById('logForm');
+    const calendar = document.getElementById('calendar');
+    const uploadFile = document.getElementById('uploadFile');
+    const summaryTableBody = document.querySelector('#summaryTable tbody');
+    const logs = {};
+
+    function getMonthDates(year, month) {
+      const dates = [];
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(year, month, day);
+        dates.push(date.toISOString().slice(0, 10));
+      }
+      return dates;
+    }
+
+    function renderCalendar() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const monthDates = getMonthDates(year, month);
+
+      calendar.innerHTML = '';
+      monthDates.forEach(date => {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'day';
+        dayDiv.innerHTML = `<strong>${date}</strong>`;
+
+        if (logs[date]) {
+          logs[date].forEach(entry => {
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'entry';
+            entryDiv.textContent = `#${entry.ticket} - ${entry.hours}h`;
+            dayDiv.appendChild(entryDiv);
+          });
+        }
+
+        calendar.appendChild(dayDiv);
+      });
+
+      renderSummaryTable();
+    }
+
+    function renderSummaryTable() {
+      const ticketSummary = {};
+      for (const date in logs) {
+        logs[date].forEach(entry => {
+          if (!ticketSummary[entry.ticket]) {
+            ticketSummary[entry.ticket] = { total: 0, dates: new Set() };
+          }
+          ticketSummary[entry.ticket].total += entry.hours;
+          ticketSummary[entry.ticket].dates.add(date);
+        });
+      }
+
+      summaryTableBody.innerHTML = '';
+      for (const ticket in ticketSummary) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${ticket}</td>
+          <td>${ticketSummary[ticket].total}</td>
+          <td>${Array.from(ticketSummary[ticket].dates).join(', ')}</td>
+        `;
+        summaryTableBody.appendChild(row);
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const ticket = document.getElementById('ticketId').value;
+      const date = document.getElementById('logDate').value;
+      const hours = parseInt(document.getElementById('hours').value);
+
+      if (!logs[date]) logs[date] = [];
+      logs[date].push({ ticket, hours });
+
+      form.reset();
+      renderCalendar();
+    });
+
+    function downloadExcel() {
+      const data = [];
+      for (const date in logs) {
+        logs[date].forEach(entry => {
+          data.push({ Date: date, TicketID: entry.ticket, Hours: entry.hours });
+        });
+      }
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Logs");
+      XLSX.writeFile(wb, "ticket_logs.xlsx");
+    }
+
+    uploadFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        json.forEach(row => {
+          if (!logs[row.Date]) logs[row.Date] = [];
+          logs[row.Date].push({ ticket: row.TicketID, hours: row.Hours });
+        });
+
+        renderCalendar();
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    renderCalendar();
+  </script>
+</body>
+</html>
