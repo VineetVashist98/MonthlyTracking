@@ -50,6 +50,7 @@ ticket-log-tracker/
 
 
 ## Built With
+**Built With**
 HTML5, CSS3, Vanilla JavaScript
 SheetJS/xlsx – For Excel file handling
 LocalStorage – For persistent ticket logs
