@@ -35,4 +35,22 @@ Perfect for quickly tracking work done on different tickets across days in a mon
 ---
 
 ## 📂 File Structure
+ticket-log-tracker/
+│
+├── index.html # Main application HTML, CSS, and JavaScript
+├── README.md # Project documentation
+
+## Excel Summary Format
+**Exported file structure**
+
+| TicketID | TotalHours | DatesWorked            |
+| -------- | ---------- | ---------------------- |
+| ABC-123  | 5          | 2025-08-10, 2025-08-11 |
+| XYZ-456  | 3          | 2025-08-12             |
+
+
+## Built With
+HTML5, CSS3, Vanilla JavaScript
+SheetJS/xlsx – For Excel file handling
+LocalStorage – For persistent ticket logs
 
