@@ -1,68 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ticket Log Calendar</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-    }
-    form {
-      margin-bottom: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    input, button {
-      padding: 8px;
-    }
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 10px;
-      margin-bottom: 40px;
-    }
-    .day {
-      border: 1px solid #ccc;
-      padding: 10px;
-      min-height: 100px;
-    }
-    .entry {
-      background-color: #f0f8ff;
-      border: 1px solid #00f;
-      margin-top: 5px;
-      padding: 4px;
-      font-size: 0.85em;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { text-align: center; }
+    form { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    input, button { padding: 8px; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 40px; }
+    .day { border: 1px solid #ccc; padding: 10px; min-height: 100px; cursor: pointer; }
+    .day:hover { background-color: #f9f9f9; }
+    .entry { border: 1px solid; margin-top: 5px; padding: 4px; font-size: 0.85em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .nav { text-align: center; margin-bottom: 10px; }
+    .clear-btn { position: fixed; bottom: 20px; right: 20px; padding: 10px; background: red; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
   <h1>Ticket Log Tracker</h1>
+
+  <div class="nav">
+    <button onclick="changeMonth(-1)">Prev Month</button>
+    <span id="monthLabel"></span>
+    <button onclick="changeMonth(1)">Next Month</button>
+  </div>
+
   <form id="logForm">
     <input type="text" id="ticketId" placeholder="Ticket ID" required>
     <input type="date" id="logDate" required>
     <input type="number" id="hours" placeholder="Hours" min="1" required>
     <button type="submit">Log Ticket</button>
-    <button type="button" onclick="downloadExcel()">Download Excel</button>
-    <input type="file" id="uploadFile" accept=".xlsx">
+
+    <button type="button" onclick="downloadSummary()">Download Summary</button>
+    <input type="file" id="uploadSummary" accept=".xlsx">
   </form>
 
   <div class="calendar" id="calendar"></div>
@@ -79,19 +53,43 @@
     <tbody></tbody>
   </table>
 
+  <button class="clear-btn" onclick="clearData()">Clear & Refresh</button>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
     const form = document.getElementById('logForm');
     const calendar = document.getElementById('calendar');
-    const uploadFile = document.getElementById('uploadFile');
+    const uploadSummary = document.getElementById('uploadSummary');
     const summaryTableBody = document.querySelector('#summaryTable tbody');
-    const logs = {};
+    const monthLabel = document.getElementById('monthLabel');
+    let logs = {};
+
+    const ticketColors = [
+      "#FFB3BA","#FFDFBA","#FFFFBA","#BAFFC9","#BAE1FF",
+      "#E6B3FF","#FFC3E6","#C4FAF8","#FFD6A5","#FDFFB6",
+      "#CAFFBF","#9BF6FF","#A0C4FF","#BDB2FF","#FFC6FF",
+      "#FFADAD","#FFD6A5","#FDFFB6","#CAFFBF","#A0C4FF"
+    ];
+
+    // Persistence
+    function saveLogs() {
+      localStorage.setItem('ticketLogs', JSON.stringify(logs));
+    }
+    function loadLogs() {
+      const saved = localStorage.getItem('ticketLogs');
+      if (saved) logs = JSON.parse(saved);
+    }
+    function clearData() {
+      localStorage.removeItem('ticketLogs');
+      location.reload();
+    }
+
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
 
     function getMonthDates(year, month) {
       const dates = [];
-      const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
-
       for (let day = 1; day <= lastDay.getDate(); day++) {
         const date = new Date(year, month, day);
         dates.push(date.toISOString().slice(0, 10));
@@ -99,27 +97,36 @@
       return dates;
     }
 
+    function getColorForTicket(ticket) {
+      const idx = Math.abs(ticket.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % ticketColors.length;
+      return ticketColors[idx];
+    }
+
     function renderCalendar() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-      const monthDates = getMonthDates(year, month);
+      monthLabel.textContent = `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} ${currentYear}`;
+      const monthDates = getMonthDates(currentYear, currentMonth);
 
       calendar.innerHTML = '';
       monthDates.forEach(date => {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'day';
         dayDiv.innerHTML = `<strong>${date}</strong>`;
+        dayDiv.addEventListener('click', () => {
+          document.getElementById('logDate').value = date;
+          document.getElementById('ticketId').focus();
+        });
 
         if (logs[date]) {
           logs[date].forEach(entry => {
             const entryDiv = document.createElement('div');
             entryDiv.className = 'entry';
             entryDiv.textContent = `#${entry.ticket} - ${entry.hours}h`;
+            const color = getColorForTicket(entry.ticket);
+            entryDiv.style.backgroundColor = color;
+            entryDiv.style.borderColor = color;
             dayDiv.appendChild(entryDiv);
           });
         }
-
         calendar.appendChild(dayDiv);
       });
 
@@ -155,28 +162,47 @@
       const ticket = document.getElementById('ticketId').value;
       const date = document.getElementById('logDate').value;
       const hours = parseInt(document.getElementById('hours').value);
-
       if (!logs[date]) logs[date] = [];
       logs[date].push({ ticket, hours });
-
+      saveLogs();
       form.reset();
       renderCalendar();
     });
 
-    function downloadExcel() {
-      const data = [];
-      for (const date in logs) {
-        logs[date].forEach(entry => {
-          data.push({ Date: date, TicketID: entry.ticket, Hours: entry.hours });
-        });
+    function downloadSummary() {
+  const summary = [];
+  const ticketSummary = {};
+  for (const date in logs) {
+    logs[date].forEach(entry => {
+      if (!ticketSummary[entry.ticket]) {
+        ticketSummary[entry.ticket] = { total: 0, dates: new Set() };
       }
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Logs");
-      XLSX.writeFile(wb, "ticket_logs.xlsx");
-    }
+      ticketSummary[entry.ticket].total += entry.hours;
+      ticketSummary[entry.ticket].dates.add(date);
+    });
+  }
+  for (const ticket in ticketSummary) {
+    summary.push({
+      TicketID: ticket,
+      TotalHours: ticketSummary[ticket].total,
+      DatesWorked: Array.from(ticketSummary[ticket].dates).join(', ')
+    });
+  }
+  const ws = XLSX.utils.json_to_sheet(summary);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Summary");
 
-    uploadFile.addEventListener('change', (e) => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = now.toLocaleString('default', { month: 'short' }).toUpperCase();
+  const year = now.getFullYear();
+  const fileName = `${day}_${month}_${year}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+}
+
+
+    uploadSummary.addEventListener('change', (e) => {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -185,16 +211,31 @@
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(sheet);
 
+        logs = {};
         json.forEach(row => {
-          if (!logs[row.Date]) logs[row.Date] = [];
-          logs[row.Date].push({ ticket: row.TicketID, hours: row.Hours });
+          const dates = row.DatesWorked.split(',').map(d => d.trim());
+          dates.forEach(date => {
+            if (!logs[date]) logs[date] = [];
+            logs[date].push({
+              ticket: row.TicketID,
+              hours: row.TotalHours / dates.length
+            });
+          });
         });
-
+        saveLogs();
         renderCalendar();
       };
       reader.readAsArrayBuffer(file);
     });
 
+    function changeMonth(offset) {
+      currentMonth += offset;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      renderCalendar();
+    }
+
+    loadLogs();
     renderCalendar();
   </script>
 </body>
