@@ -335,34 +335,52 @@
 
 
 
-    uploadSummary.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet);
+ uploadSummary.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  const reader = new FileReader();
 
-        logs = {};
-        dates.forEach(date => {
-          if (!logs[date]) logs[date] = [];
-          const existing = logs[date].find(e => e.ticket === row.TicketID);
-          const splitHours = row.TotalHours / dates.length;
-          if (existing) {
-            existing.hours += splitHours;
-          } else {
-            logs[date].push({
-              ticket: row.TicketID,
-              hours: splitHours
-            });
-          }
-        });
-        saveLogs();
-        renderCalendar();
-      };
-      reader.readAsArrayBuffer(file);
+  reader.onload = (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
+
+    logs = {}; // reset logs
+
+    json.forEach(row => {
+      if (!row.TicketID || !row.DatesWorked) return;
+
+      // Split "01-08-2025, 05-08-2025"
+      const dates = row.DatesWorked.split(",").map(d => d.trim());
+
+      // Divide hours across dates
+      const splitHours = row.TotalHours / dates.length;
+
+      dates.forEach(dateStr => {
+        // Convert "DD-MM-YYYY" → "YYYY-MM-DD"
+        const [day, month, year] = dateStr.split("-");
+        const formattedDate = `${year}-${month}-${day}`;
+
+        if (!logs[formattedDate]) logs[formattedDate] = [];
+        const existing = logs[formattedDate].find(e => e.ticket === row.TicketID);
+        if (existing) {
+          existing.hours += splitHours;
+        } else {
+          logs[formattedDate].push({
+            ticket: row.TicketID,
+            hours: splitHours
+          });
+        }
+      });
     });
+
+    saveLogs();
+    renderCalendar();
+  };
+
+  reader.readAsArrayBuffer(file);
+});
+
 
     function changeMonth(offset) {
       currentMonth += offset;
