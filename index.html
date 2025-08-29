@@ -1,25 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ticket Log Calendar</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1 { text-align: center; }
-    form { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-    input, button { padding: 8px; }
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 40px; }
-    .day { border: 1px solid #ccc; padding: 10px; min-height: 100px; cursor: pointer; }
-    .day:hover { background-color: #f9f9f9; }
-    .entry { border: 1px solid; margin-top: 5px; padding: 4px; font-size: 0.85em; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    .nav { text-align: center; margin-bottom: 10px; }
-    .clear-btn { position: fixed; bottom: 20px; right: 20px; padding: 10px; background: red; color: white; border: none; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    form {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input,
+    button {
+      padding: 8px;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+
+    .day {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 100px;
+      cursor: pointer;
+    }
+
+    .day:hover {
+      background-color: #f9f9f9;
+    }
+
+    .entry {
+      border: 1px solid;
+      margin-top: 5px;
+      padding: 4px;
+      font-size: 0.85em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .nav {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .clear-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px;
+      background: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
   <h1>Ticket Log Tracker</h1>
 
@@ -65,10 +132,10 @@
     let logs = {};
 
     const ticketColors = [
-      "#FFB3BA","#FFDFBA","#FFFFBA","#BAFFC9","#BAE1FF",
-      "#E6B3FF","#FFC3E6","#C4FAF8","#FFD6A5","#FDFFB6",
-      "#CAFFBF","#9BF6FF","#A0C4FF","#BDB2FF","#FFC6FF",
-      "#FFADAD","#FFD6A5","#FDFFB6","#CAFFBF","#A0C4FF"
+      "#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF",
+      "#E6B3FF", "#FFC3E6", "#C4FAF8", "#FFD6A5", "#FDFFB6",
+      "#CAFFBF", "#9BF6FF", "#A0C4FF", "#BDB2FF", "#FFC6FF",
+      "#FFADAD", "#FFD6A5", "#FDFFB6", "#CAFFBF", "#A0C4FF"
     ];
 
     // Persistence
@@ -89,13 +156,14 @@
 
     function getMonthDates(year, month) {
       const dates = [];
-      const lastDay = new Date(year, month + 1, 0);
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(year, month, day);
-        dates.push(date.toISOString().slice(0, 10));
+      const date = new Date(year, month, 1); // 🚀 Start at the 1st
+      while (date.getMonth() === month) {
+        dates.push(date.toISOString().split('T')[0]); // YYYY-MM-DD
+        date.setDate(date.getDate() + 1);
       }
       return dates;
     }
+
 
     function getColorForTicket(ticket) {
       const idx = Math.abs(ticket.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % ticketColors.length;
@@ -103,21 +171,44 @@
     }
 
     function renderCalendar() {
-      monthLabel.textContent = `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} ${currentYear}`;
-      const monthDates = getMonthDates(currentYear, currentMonth);
+      const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
+      monthLabel.textContent = `${monthName} ${currentYear}`;
 
       calendar.innerHTML = '';
-      monthDates.forEach(date => {
+
+      const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // weekday of 1st
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate(); // total days
+
+      // Empty slots before the 1st of this month
+      for (let i = 0; i < firstDayOfWeek; i++) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'day';
+        emptyDiv.style.background = '#f5f5f5';
+        calendar.appendChild(emptyDiv);
+      }
+
+      // Actual days of THIS month (1 → daysInMonth)
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
         const dayDiv = document.createElement('div');
         dayDiv.className = 'day';
-        dayDiv.innerHTML = `<strong>${date}</strong>`;
+        dayDiv.innerHTML = `<strong>${formatDate(dateStr)}</strong>`;
         dayDiv.addEventListener('click', () => {
-          document.getElementById('logDate').value = date;
+          document.getElementById('logDate').value = dateStr;
           document.getElementById('ticketId').focus();
         });
 
-        if (logs[date]) {
-          logs[date].forEach(entry => {
+        // Weekend highlight
+        const dow = new Date(currentYear, currentMonth, day).getDay();
+        if (dow === 0 || dow === 6) {
+          dayDiv.style.backgroundColor = "#B2BEB5";
+          dayDiv.style.borderColor = "#A9A9A9";
+        }
+
+        // Render logs for this exact date
+        if (logs[dateStr]) {
+          logs[dateStr].forEach(entry => {
             const entryDiv = document.createElement('div');
             entryDiv.className = 'entry';
             entryDiv.textContent = `#${entry.ticket} - ${entry.hours}h`;
@@ -127,11 +218,46 @@
             dayDiv.appendChild(entryDiv);
           });
         }
+
         calendar.appendChild(dayDiv);
-      });
+      }
+
+      // Fill remaining slots to complete the grid (7xN)
+      const totalCells = firstDayOfWeek + daysInMonth;
+      const nextBlanks = (7 - (totalCells % 7)) % 7;
+      for (let i = 0; i < nextBlanks; i++) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'day';
+        emptyDiv.style.background = '#f5f5f5';
+        calendar.appendChild(emptyDiv);
+      }
 
       renderSummaryTable();
     }
+
+
+
+
+
+
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      const day = d.getDate();
+      const month = d.toLocaleString('default', { month: 'short' }).toUpperCase();
+      const year = d.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    function formatDateForTable(dateStr) {
+      const d = new Date(dateStr);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+
+
 
     function renderSummaryTable() {
       const ticketSummary = {};
@@ -151,7 +277,7 @@
         row.innerHTML = `
           <td>${ticket}</td>
           <td>${ticketSummary[ticket].total}</td>
-          <td>${Array.from(ticketSummary[ticket].dates).join(', ')}</td>
+         <td>${Array.from(ticketSummary[ticket].dates).map(d => formatDateForTable(d)).join(', ')}</td>
         `;
         summaryTableBody.appendChild(row);
       }
@@ -163,43 +289,50 @@
       const date = document.getElementById('logDate').value;
       const hours = parseInt(document.getElementById('hours').value);
       if (!logs[date]) logs[date] = [];
-      logs[date].push({ ticket, hours });
+      const existing = logs[date].find(e => e.ticket === ticket);
+      if (existing) {
+        existing.hours += hours; // add to existing
+      } else {
+        logs[date].push({ ticket, hours });
+      }
+
       saveLogs();
       form.reset();
       renderCalendar();
     });
 
     function downloadSummary() {
-  const summary = [];
-  const ticketSummary = {};
-  for (const date in logs) {
-    logs[date].forEach(entry => {
-      if (!ticketSummary[entry.ticket]) {
-        ticketSummary[entry.ticket] = { total: 0, dates: new Set() };
+      const summary = [];
+      const ticketSummary = {};
+      for (const date in logs) {
+        logs[date].forEach(entry => {
+          if (!ticketSummary[entry.ticket]) {
+            ticketSummary[entry.ticket] = { total: 0, dates: new Set() };
+          }
+          ticketSummary[entry.ticket].total += entry.hours;
+          ticketSummary[entry.ticket].dates.add(date);
+        });
       }
-      ticketSummary[entry.ticket].total += entry.hours;
-      ticketSummary[entry.ticket].dates.add(date);
-    });
-  }
-  for (const ticket in ticketSummary) {
-    summary.push({
-      TicketID: ticket,
-      TotalHours: ticketSummary[ticket].total,
-      DatesWorked: Array.from(ticketSummary[ticket].dates).join(', ')
-    });
-  }
-  const ws = XLSX.utils.json_to_sheet(summary);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Summary");
+      for (const ticket in ticketSummary) {
+        summary.push({
+          TicketID: ticket,
+          TotalHours: ticketSummary[ticket].total,
+          DatesWorked: Array.from(ticketSummary[ticket].dates).map(d => formatDateForTable(d)).join(', ')
+        });
+      }
+      const ws = XLSX.utils.json_to_sheet(summary);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Summary");
 
-  const now = new Date();
-  const day = String(now.getDate()).padStart(2, '0');
-  const month = now.toLocaleString('default', { month: 'short' }).toUpperCase();
-  const year = now.getFullYear();
-  const fileName = `${day}_${month}_${year}.xlsx`;
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = now.toLocaleString('default', { month: 'short' }).toUpperCase();
+      const year = now.getFullYear();
+      const fileName = `${day}_${month}_${year}.xlsx`;
 
-  XLSX.writeFile(wb, fileName);
-}
+      XLSX.writeFile(wb, fileName);
+    }
+
 
 
     uploadSummary.addEventListener('change', (e) => {
@@ -212,15 +345,18 @@
         const json = XLSX.utils.sheet_to_json(sheet);
 
         logs = {};
-        json.forEach(row => {
-          const dates = row.DatesWorked.split(',').map(d => d.trim());
-          dates.forEach(date => {
-            if (!logs[date]) logs[date] = [];
+        dates.forEach(date => {
+          if (!logs[date]) logs[date] = [];
+          const existing = logs[date].find(e => e.ticket === row.TicketID);
+          const splitHours = row.TotalHours / dates.length;
+          if (existing) {
+            existing.hours += splitHours;
+          } else {
             logs[date].push({
               ticket: row.TicketID,
-              hours: row.TotalHours / dates.length
+              hours: splitHours
             });
-          });
+          }
         });
         saveLogs();
         renderCalendar();
@@ -239,4 +375,5 @@
     renderCalendar();
   </script>
 </body>
+
 </html>
