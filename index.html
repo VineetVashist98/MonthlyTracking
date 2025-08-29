@@ -4,10 +4,125 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+    rel="stylesheet">
+
   <title>Ticket Log Calendar</title>
   <style>
+    .leckerli-one-regular {
+      font-family: "Leckerli One", cursive;
+      font-weight: 400;
+      font-style: normal;
+    }
+
+
+    .nunito-font {
+      font-family: "Nunito", sans-serif;
+      font-optical-sizing: auto;
+      font-weight: 400;
+      font-style: normal;
+    }
+
+
+    /* Month navigation */
+    .nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin: 20px 0;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .nav-btn {
+      background: #2c3e50;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: #34495e;
+    }
+
+    /* Form */
+    .log-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .log-form input {
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95em;
+      flex: 1 1 150px;
+      min-width: 120px;
+    }
+
+    /* Buttons */
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      flex: 1 1 100%;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .upload-label {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .primary-btn {
+      background: #27ae60;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #219150;
+    }
+
+    .secondary-btn {
+      background: #3498db;
+      color: white;
+    }
+
+    .secondary-btn:hover {
+      background: #2980b9;
+    }
+
+    .upload-label {
+      background: #f39c12;
+      color: white;
+    }
+
+    .upload-label:hover {
+      background: #d68910;
+    }
+
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: Consolas, monospace;
       padding: 20px;
     }
 
@@ -52,75 +167,145 @@
       font-size: 0.85em;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
 
-    th,
-    td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
 
-    th {
-      background-color: #f2f2f2;
-    }
 
-    .nav {
-      text-align: center;
-      margin-bottom: 10px;
-    }
+
 
     .clear-btn {
+       border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      
       position: fixed;
       bottom: 20px;
       right: 20px;
-      padding: 10px;
       background: red;
       color: white;
-      border: none;
-      cursor: pointer;
+    }
+
+    /* Header */
+    .app-header {
+      background: #2c3e50;
+      color: white;
+      padding: 1px;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    /* Footer */
+    .app-footer {
+      background: #f5f5f5;
+      color: #555;
+      text-align: center;
+      padding: 10px;
+      margin-top: 40px;
+      border-top: 1px solid #ddd;
+      font-size: 0.9em;
+    }
+
+    /* Section Title */
+    .section-title {
+      text-align: center;
+      margin: 30px 0 15px;
+      font-size: 1.4em;
+      color: #2c3e50;
+      font-weight: bold;
+    }
+
+    /* Table Wrapper */
+    .table-container {
+      overflow-x: auto;
+      /* makes it mobile-friendly */
+      margin: 0 auto;
+      max-width: 800px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Table */
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95em;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .styled-table thead {
+      background: #2c3e50;
+      color: #fff;
+      text-align: left;
+    }
+
+    .styled-table th,
+    .styled-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* Zebra rows */
+    .styled-table tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    /* Hover */
+    .styled-table tbody tr:hover {
+      background-color: #f1f7ff;
+      transition: background 0.2s;
     }
   </style>
 </head>
 
-<body>
-  <h1>Ticket Log Tracker</h1>
+<body class="nunito-font">
+
+  <header class="app-header">
+    <h1 class="leckerli-one-regular">🎫 Ticket Log Tracker</h1>
+  </header>
+
 
   <div class="nav">
-    <button onclick="changeMonth(-1)">Prev Month</button>
+    <button class="nav-btn" onclick="changeMonth(-1)">⟵</button>
     <span id="monthLabel"></span>
-    <button onclick="changeMonth(1)">Next Month</button>
+    <button class="nav-btn" onclick="changeMonth(1)">⟶</button>
   </div>
 
-  <form id="logForm">
+  <form id="logForm" class="log-form">
     <input type="text" id="ticketId" placeholder="Ticket ID" required>
     <input type="date" id="logDate" required>
     <input type="number" id="hours" placeholder="Hours" min="1" required>
-    <button type="submit">Log Ticket</button>
 
-    <button type="button" onclick="downloadSummary()">Download Summary</button>
-    <input type="file" id="uploadSummary" accept=".xlsx">
+    <div class="form-actions">
+      <button type="submit" class="primary-btn">+ Log Ticket</button>
+      <button type="button" class="secondary-btn" onclick="downloadSummary()">⬇ Download</button>
+      <label for="uploadSummary" class="upload-label">⬆ Upload</label>
+      <input type="file" id="uploadSummary" accept=".xlsx" hidden>
+    </div>
   </form>
 
   <div class="calendar" id="calendar"></div>
 
-  <h2>Summary Table</h2>
-  <table id="summaryTable">
-    <thead>
-      <tr>
-        <th>Ticket ID</th>
-        <th>Total Hours</th>
-        <th>Dates Worked</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <h2 class="section-title">Summary Table</h2>
+  <div class="table-container">
+    <table id="summaryTable" class="styled-table">
+      <thead>
+        <tr>
+          <th>Ticket ID</th>
+          <th>Total Hours</th>
+          <th>Dates Worked</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  <button class="clear-btn" onclick="clearData()">Clear & Refresh</button>
+
+  <button class="clear-btn" onclick="clearData()">❌ Clear & Refresh</button>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
@@ -202,8 +387,9 @@
         // Weekend highlight
         const dow = new Date(currentYear, currentMonth, day).getDay();
         if (dow === 0 || dow === 6) {
-          dayDiv.style.backgroundColor = "#B2BEB5";
-          dayDiv.style.borderColor = "#A9A9A9";
+          dayDiv.style.backgroundColor = "#D3D3D3";
+          dayDiv.style.borderColor = "#D3D3D3";
+          dayDiv.style.color = "#f8f9fa"; // off white
         }
 
         // Render logs for this exact date
@@ -335,51 +521,51 @@
 
 
 
- uploadSummary.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  const reader = new FileReader();
+    uploadSummary.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
 
-  reader.onload = (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(sheet);
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
 
-    logs = {}; // reset logs
+        logs = {}; // reset logs
 
-    json.forEach(row => {
-      if (!row.TicketID || !row.DatesWorked) return;
+        json.forEach(row => {
+          if (!row.TicketID || !row.DatesWorked) return;
 
-      // Split "01-08-2025, 05-08-2025"
-      const dates = row.DatesWorked.split(",").map(d => d.trim());
+          // Split "01-08-2025, 05-08-2025"
+          const dates = row.DatesWorked.split(",").map(d => d.trim());
 
-      // Divide hours across dates
-      const splitHours = row.TotalHours / dates.length;
+          // Divide hours across dates
+          const splitHours = row.TotalHours / dates.length;
 
-      dates.forEach(dateStr => {
-        // Convert "DD-MM-YYYY" → "YYYY-MM-DD"
-        const [day, month, year] = dateStr.split("-");
-        const formattedDate = `${year}-${month}-${day}`;
+          dates.forEach(dateStr => {
+            // Convert "DD-MM-YYYY" → "YYYY-MM-DD"
+            const [day, month, year] = dateStr.split("-");
+            const formattedDate = `${year}-${month}-${day}`;
 
-        if (!logs[formattedDate]) logs[formattedDate] = [];
-        const existing = logs[formattedDate].find(e => e.ticket === row.TicketID);
-        if (existing) {
-          existing.hours += splitHours;
-        } else {
-          logs[formattedDate].push({
-            ticket: row.TicketID,
-            hours: splitHours
+            if (!logs[formattedDate]) logs[formattedDate] = [];
+            const existing = logs[formattedDate].find(e => e.ticket === row.TicketID);
+            if (existing) {
+              existing.hours += splitHours;
+            } else {
+              logs[formattedDate].push({
+                ticket: row.TicketID,
+                hours: splitHours
+              });
+            }
           });
-        }
-      });
+        });
+
+        saveLogs();
+        renderCalendar();
+      };
+
+      reader.readAsArrayBuffer(file);
     });
-
-    saveLogs();
-    renderCalendar();
-  };
-
-  reader.readAsArrayBuffer(file);
-});
 
 
     function changeMonth(offset) {
@@ -391,6 +577,14 @@
 
     loadLogs();
     renderCalendar();
+  </script>
+
+  <footer class="app-footer">
+    <p>&copy; <span id="year"></span> Ticket Logger | Built for personal tracking</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 
